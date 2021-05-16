@@ -1,0 +1,85 @@
+
+User Guide 
+
+Requirements
+..............
+- Windows 10  
+- Python 3.9.2 or higher
+- Matplotlib (install by using pip install matplotlib)
+- Pandas (install by using pip install pandas)
+
+Usage
+..............
+SuperPy is a command-line-interface program. You can run it from the commandline on your computer.
+There is a number of commands you can use. Read below or use python main.py -h. 
+
+Record a purchase:
+python main.py buy --product_name xxxx --buy_price xxxx --expiration_date xxxxx (use YYYY-mm-dd format)
+	f.e. > 	python main.py buy --product_name orange --buy_price 3 --expiration_date 2021-05-25
+		orange bought and added to bought.csv
+
+Record a sale: 
+python main.py sell --product_name xxxx --sell_price xxxx
+(selling is only possible when an item is in stock)
+	f.e. > 	python main.py sell --product_name orange --buy_price 4 
+		orange sold and added to sold csv.
+	in case an item isn't in stock, you'll be notified: 
+	     > 	python main.py sell --product_name romanesco --buy_price 3
+		Item not available, consider buying it ;)
+
+Change the date the application perceives as today:
+python main.py advance_time --days xxx (number of days)
+	f.e. >	python main.py advance_time --days 2
+		The date is advanced with 2 days. The new date is 2021-05-18. 
+
+Report revenue:
+- For today: python main.py report revenue --today
+- For yesterday: python main.py report revenue --yesterday
+- For specific date uptil today: python main.py report revenue --date (use YYYY-mm-dd format)
+	f.e. >	python main.py report revenue --today
+		The revenue between 2021-05-16 and 2021-05-16 is €4.0. 
+	These options work the same for --yesterday and --date. In case you use the wrong date format, 
+	Python will tell you: 'Input does not meet requirements, use help function'. 
+
+Report profit:
+- For today: python main.py report profit --today
+- For yesterday: python main.py report profit --yesterday
+- For specific date uptil today: python main.py report revenue --date (use YYYY-mm-dd format)
+	f.e. >	python main.py report profit--today
+		The revenue between 2021-05-16 and 2021-05-16 is €4.0. 
+		The profit between 2021-05-16 and 2021-05-16 is €1.0. 
+	These options work the same for --yesterday and --date. In case you use the wrong date format, 
+	Python will tell you: 'Input does not meet requirements, use help function'. 
+
+Plot revenue bar chart from date until today:
+python main.py plot_revenue --date (use YYYY-mm-dd format)
+	f.e. > python main.py plot_revenue --2021-05-16 (in case you want to get todays revenue)
+	     > python main.py plot_revenue --2021-04-20 (gives you the revenue per day over a longer period)
+
+Export files to Excel format:
+The standard format for exporting is csv. In case you want to export to Excel, use the codes below:
+- Sales file to Excel: python main.py export_to_excel --sold
+	f.e. > 	python main.py export_to_excel --sold
+		Output printed to xlsx file: Sales_up_to_2021-05-16.xlsx
+- Bought file to Excel: python main.py export_to_excel --bought
+	f.e. >	python main.py export_to_excel --bought
+		Output printed to xlsx file: Bought_until_2021-05.16.xlsx
+
+Files 
+........
+In your current working directory the next files will be created:
+- date.txt
+- bought.csv
+- sold.csv
+In case you use the option to export to Excel, the following files will also be created:
+- Sales_up_to_YYYY-mm-dd.xlsx
+- Bought_until_YYYY-mm-dd.xlsx
+
+
+
+
+
+
+
+
+
