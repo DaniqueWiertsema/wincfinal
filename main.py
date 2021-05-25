@@ -7,6 +7,7 @@ import os
 from os import path
 import datetime
 from datetime import date, datetime, timedelta
+from datetime import date as datum
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MultipleLocator
@@ -15,9 +16,6 @@ from matplotlib.ticker import MultipleLocator
 __winc_id__ = 'a2bc36ea784242e4989deb157d527ba0'
 __human_name__ = 'superpy'
 
-# Your code below this line.
-def main():
-    pass
 
 #parsers
 parser = argparse.ArgumentParser(description='keep track of my store', formatter_class=argparse.RawDescriptionHelpFormatter, add_help=True)
@@ -60,26 +58,23 @@ args=parser.parse_args()
 #functions
 def startup():
     create_date_file()
-    create_bought_file()
-    create_sold_file()
+    sold_header = ['id', 'bought_id', 'product_name', 'sell_date', 'sell_price']
+    bought_header = ['id', 'product_name', 'buy_date', 'buy_price', 'expiration_date']
+    create_file('sold.csv', sold_header)
+    create_file('bought.csv', bought_header)
 
-def create_date_file(): #creates date file
+def create_date_file():
     if path.exists('date.txt') == False :
-        date = date.today()
+        date = datum.today()
         file = open('date.txt', 'w')
-        file.write(date)
+        file.write(datetime.strptime(date))
 
-def create_bought_file(): #create overview of items bought
-    if path.exists('bought.csv') == False:
-        with open('bought.csv', 'w', newline='') as csvfile:
-            bought_creator = csv.writer(csvfile)
-            bought_creator.writerow(['id', 'product_name', 'buy_date', 'buy_price', 'expiration_date'])
+def create_file(file_name, headers):
+    if path.exists(file_name) == False:
+        with open(file_name, 'w', newline='') as csvfile:
+            creator = csv.writer(csvfile)
+            creator.writerow(headers)
 
-def create_sold_file(): #create overview of items sold
-    if path.exists('sold.csv') == False:
-        with open('sold.csv', 'w', newline='') as csvfile:
-            sold_creator = csv.writer(csvfile)
-            sold_creator.writerow(['id', 'bought_id', 'product_name', 'sell_date', 'sell_price'])
 
 def buy_item(product_name, buy_price, expiration_date): #function for buying items
     buy_date = date.today()
@@ -96,7 +91,7 @@ def buy_item(product_name, buy_price, expiration_date): #function for buying ite
         print(f'{product_name} bought and added to bought.csv')
 
 def sell_item(product_name, sell_price): #function for selling items
-    sell_date = date.today()
+    sell_date = datum.today()
     with open('sold.csv', 'r+', newline='') as sold_file: #creates unique sold id
         reader = csv.reader(sold_file)
         next(reader) 
@@ -120,7 +115,7 @@ def sell_item(product_name, sell_price): #function for selling items
             print('Item not available, consider buying it ;)') #respons if item isn't in stock
 
 def advance_time(x): #set the date the applicaation perceives as 'today'
-    datenow = date.today()
+    datenow = datum.today()
     days_to_advance = int(x) 
     future = timedelta(days=days_to_advance)
     total = str(datenow + future)
@@ -130,7 +125,7 @@ def advance_time(x): #set the date the applicaation perceives as 'today'
     print(f'The date is advanced with {x} days. The new date is {total}.')
 
 def period(time): #makes it possible to report for today, yesterday and a period uptil today
-    datenow = date.today()
+    datenow = datum.today()
     resolution = time.count('-') #checks if period is formatted correctly (YYYY-mm-dd)
     if time == 'today':
         date_end = datenow
@@ -189,7 +184,7 @@ def profit(datenow, date_end):
     return profit    
 
 def print_to_excel(report_type): #function to export files to Excel-format
-    output_date = date.today()
+    output_date = datum.today()
     current_dir = os.getcwd()
     print(current_dir)
     if report_type == 'sold':
