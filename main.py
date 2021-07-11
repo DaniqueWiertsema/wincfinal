@@ -16,7 +16,6 @@ from matplotlib.ticker import MultipleLocator
 __winc_id__ = 'a2bc36ea784242e4989deb157d527ba0'
 __human_name__ = 'superpy'
 
-
 #parsers
 parser = argparse.ArgumentParser(description='keep track of my store', formatter_class=argparse.RawDescriptionHelpFormatter, add_help=True)
 subparsers = parser.add_subparsers(dest='command')
@@ -53,6 +52,10 @@ export_parser = subparsers.add_parser('export_to_excel', help = 'export your rep
 export_parser.add_argument('--sold', action='store_true', help='sold items')
 export_parser.add_argument('--bought', action='store_true', help = 'bought items')
 
+report_inventory_parser = subparsers.add_parser('report_inventory', help = 'report current amount in stock of chosen product')
+report_inventory_parser.add_argument('--all_products', action = 'store_true', help = 'shows current stock (all products)')
+report_inventory_parser.add_argument('--product', metavar='\b', type=str, help = 'shows current amount of chosen product')
+
 args=parser.parse_args()
 
 #functions
@@ -60,11 +63,13 @@ def startup():
     create_date_file()
     sold_header = ['id', 'bought_id', 'product_name', 'sell_date', 'sell_price']
     bought_header = ['id', 'product_name', 'buy_date', 'buy_price', 'expiration_date']
+    inventory_header = ['bought_id', 'product_name', 'buy_date', 'buy_price', 'expiration_date']
     create_file('sold.csv', sold_header)
     create_file('bought.csv', bought_header)
+    create_file('inventory.csv', inventory_header)
 
 def create_date_file():
-    if path.exists('date.txt') == False :
+    if path.exists('date.txt') == False:
         date = datum.today()
         file = open('date.txt', 'w')
         file.write(datetime.strptime(date))
@@ -75,10 +80,20 @@ def create_file(file_name, headers):
             creator = csv.writer(csvfile)
             creator.writerow(headers)
 
-
 def buy_item(product_name, buy_price, expiration_date): #function for buying items
     buy_date = date.today()
     with open('bought.csv', 'r+', newline='') as file:
+        reader = csv.reader(file)
+        next(reader)
+        find_buy_id = [0]
+        for row in reader:
+            bought_id = int(row[0])
+            find_buy_id.append(bought_id)
+        bought_id = max(find_buy_id)+1
+        bought_item = csv.writer(file)
+        bought_item.writerow([bought_id, product_name, buy_date, buy_price, expiration_date])
+        print(f'{product_name} bought and added to bought.csv')
+    with open('inventory.csv', 'r+', newline='') as file:
         reader = csv.reader(file)
         next(reader)
         find_buy_id = [0]
@@ -101,18 +116,22 @@ def sell_item(product_name, sell_price): #function for selling items
         for row in reader:
             sold_id = int(row[0])
             find_sold_id.append(sold_id) 
-        sold_id = max(find_sold_id)+1 
-    with open('bought.csv', newline='') as bought_file: #combines sold id with bought id
-        bought_reader = csv.reader(bought_file)
-        stock = [line[0] for line in bought_reader if line[1] == product_name]
-        if stock:
-            bought_id = stock[0]
-            with open('sold.csv', 'a', newline='') as sold_file:
-                sold_item = csv.writer(sold_file)
-                sold_item.writerow([sold_id, bought_id, product_name, sell_date, sell_price])
-                print(f'{product_name} sold and added to sold.csv')
-        else:
-            print('Item not available, consider buying it ;)') #respons if item isn't in stock
+        sold_id = max(find_sold_id)+1
+
+    inv_df = pd.read_csv("inventory.csv", sep=',')
+    available_products = inv_df[inv_df['product_name'] == product_name]
+    if available_products.empty:
+        print('Item not available, consider buying it ;)')
+    else:
+        available_products = available_products.reset_index()
+        bought_id = available_products['bought_id'].loc[0]
+        inv_df_deleted = inv_df[inv_df['bought_id'] != bought_id]
+        inv_df_deleted.to_csv("inventory.csv", sep=',', index=False)
+
+        with open('sold.csv', 'a', newline='') as sold_file:
+            sold_item = csv.writer(sold_file)
+            sold_item.writerow([sold_id, bought_id, product_name, sell_date, sell_price])
+            print(f'{product_name} sold and added to sold.csv')
 
 def advance_time(x): #set the date the applicaation perceives as 'today'
     datenow = datum.today()
@@ -195,7 +214,32 @@ def print_to_excel(report_type): #function to export files to Excel-format
         bought_df = pd.read_csv('bought.csv', sep=',')
         output_name = (f'Bought_until_{output_date}.xlsx')
         bought_df.to_excel(output_name, index=False)
-    print(f'Output printed to xlsx file: {output_name}')  
+    print(f'Output printed to xlsx file: {output_name}')
+
+def report_inventory(products):
+    output_date = datum.today()
+    if products == 'all_products':
+        output_name = "all products"
+        inv_df = pd.read_csv("inventory.csv", sep=',')
+        df_to_group = inv_df[:]
+        counted_df = df_to_group.groupby(by=['product_name']).count()
+        counted_df = counted_df.reset_index()
+        counted_df['no._products'] = counted_df['bought_id']
+        counted_df = counted_df[['product_name', 'no._products']]
+        counted_df.to_csv(f"Inventory report of {output_name}, {output_date}.csv", sep=',', index=False)
+    else:
+        output_name = products
+        inv_df = pd.read_csv("inventory.csv", sep=',')
+        available_products = inv_df[inv_df['product_name'] == products]
+        if available_products.empty:
+            print('Item not available, no report can be made')
+        else:
+            counted_df = available_products.groupby(['product_name']).count()
+            counted_df = counted_df.reset_index()
+            counted_df['no._products'] = counted_df['bought_id']
+            counted_df = counted_df[['product_name', 'no._products']]
+            counted_df.to_csv(f"Inventory report of {output_name}, {output_date}.csv", sep=',', index=False)
+
 
 if __name__ == '__main__':
     startup()
@@ -233,4 +277,10 @@ if __name__ == '__main__':
             print_to_excel('sold')
         if args.bought == True : 
             print_to_excel('bought')
+    elif args.command == 'report_inventory':
+        if args.all_products == True :
+            report_inventory("all_products")
+        elif args.product:
+            report_inventory(args.product)
+
 
